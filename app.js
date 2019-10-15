@@ -22,7 +22,7 @@ console.log(consumer_key);
 console.log(consumer_secret);
 
 const bearerTokenURL = new URL('https://api.twitter.com/oauth2/token');
-const streamURL = new URL('https://api.twitter.com/labs/1/tweets/stream/filter');
+const streamURL = new URL('https://api.twitter.com/labs/1/tweets/stream/filter?format=detailed');
 const rulesURL = new URL('https://api.twitter.com/labs/1/tweets/stream/filter/rules');
 
 async function bearerToken (auth) {
@@ -42,6 +42,7 @@ async function bearerToken (auth) {
 }
 
 async function getAllRules(token) {
+  let response;
   const requestConfig = {
     url: rulesURL,
     auth: {
@@ -49,16 +50,17 @@ async function getAllRules(token) {
     }
   };
 
-  const response = await get(requestConfig);
-  if (response.statusCode !== 200) {
-    throw new Error(response.body);
-    return null;
+  try {
+    response = await post(requestConfig);
+  } catch(e) {
+    console.log(e);
   }
 
   return JSON.parse(response.body);
 }
 
 async function deleteAllRules(rules, token) {
+  let response;
   if (!Array.isArray(rules.data)) {
     return null;
   }
@@ -77,16 +79,17 @@ async function deleteAllRules(rules, token) {
     }
   };
 
-  const response = await post(requestConfig);
-  if (response.statusCode !== 200) {
-    throw new Error(JSON.stringify(response.body));
-    return null;
+  try {
+    response = await post(requestConfig);
+  } catch(e) {
+    console.log(e);
   }
 
   return response.body;
 }
 
 async function setRules(rules, token) {
+  let response;
   const requestConfig = {
     url: rulesURL,
     auth: {
@@ -97,10 +100,10 @@ async function setRules(rules, token) {
     }
   };
 
-  const response = await post(requestConfig);
-  if (response.statusCode !== 201) {
-    throw new Error(JSON.stringify(response.body));
-    return null;
+  try {
+    response = await post(requestConfig);
+  } catch(e) {
+    console.log(e);
   }
 
   return response.body;
@@ -133,11 +136,15 @@ function streamConnect(token) {
   return stream;
 }
 
-(async () => {
+app.get('/stream', async (req, res) => {
+  const hashtags = req.query.hashtags;
+  let rules = [];
+  for (let i = 0; i < hashtags.length; i++) {
+    let hashtag = hashtags[i];
+    let rule = {'value': `${hashtag}`, 'tag': `${hashtag}`};
+    rules.push(rule);
+  }
   let token, currentRules;
-  const rules = [
-    { 'value': '#hongkong has:hashtags', 'tag': 'hongkong hashtag' },
-  ];
 
   try {
     // Exchange your credentials for a Bearer token
@@ -146,29 +153,40 @@ function streamConnect(token) {
     console.error(`Could not generate a Bearer token. Please check that your credentials are correct and that the Filtered Stream preview is enabled in your Labs dashboard. (${e})`);
     process.exit(-1);
   }
-
-  try {
-    // Gets the complete list of rules currently applied to the stream
-    currentRules = await getAllRules(token);
-    
-    // Delete all rules. Comment this line if you want to keep your existing rules.
-    //await deleteAllRules(currentRules, token);
-
-    // Add rules to the stream. Comment this line if you want to keep your existing rules.
-    //await setRules(rules, token);
-  } catch (e) {
-    console.error(e);
-    process.exit(-1);
-  }
-
-  // Listen to the stream.
-  // This reconnection logic will attempt to reconnect when a disconnection is detected.
-  // To avoid rate limites, this logic implements exponential backoff, so the wait time
-  // will increase if the client cannot reconnect to the stream.
-
-  const stream = streamConnect(token);
+  currentRules = await getAllRules(token);
+  await deleteAllRules(currentRules, token);
+  await setRules(rules, token);
+  
+  const config = {
+    url: streamURL,
+    auth: {
+      bearer: token,
+    },
+    timeout: 20000,
+  };
+  const stream = request.get(config);
   let timeout = 0;
-  stream.on('timeout', () => {
+
+  stream.on('data', data => {
+    const f = data.toString();
+    try {
+      const in_json = JSON.parse(data);
+      const tweet = in_json.toString();
+      console.log(in_json);
+      res.write(f);
+      //res.write(in_json);
+    } catch (e) {
+      console.log(e);
+    }
+    //console.log("-----------------------------------");
+    //console.log(tweet);
+    console.log("-----------------------------------");
+      
+  }).on('error', error => {
+    if (error.code === 'ETIMEDOUT') {
+      stream.emit('timeout');
+    }
+  }).on('timeout', () => {
     // Reconnect on error
     console.warn('A connection error occurred. Reconnecting…');
     setTimeout(() => {
@@ -177,7 +195,53 @@ function streamConnect(token) {
     }, 2 ** timeout);
     streamConnect(token);
   });
-})();
+})
+
+//(async () => {
+//  let token, currentRules;
+//  const rules = [
+//    { 'value': '#hongkong has:hashtags', 'tag': 'hongkong hashtag' },
+//  ];
+//
+//  try {
+//    // Exchange your credentials for a Bearer token
+//    token = await bearerToken({consumer_key, consumer_secret});
+//  } catch (e) {
+//    console.error(`Could not generate a Bearer token. Please check that your credentials are correct and that the Filtered Stream preview is enabled in your Labs dashboard. (${e})`);
+//    process.exit(-1);
+//  }
+//
+//  try {
+//    // Gets the complete list of rules currently applied to the stream
+//    currentRules = await getAllRules(token);
+//    
+//    // Delete all rules. Comment this line if you want to keep your existing rules.
+//    //await deleteAllRules(currentRules, token);
+//
+//    // Add rules to the stream. Comment this line if you want to keep your existing rules.
+//    //await setRules(rules, token);
+//  } catch (e) {
+//    console.error(e);
+//    process.exit(-1);
+//  }
+//
+//  // Listen to the stream.
+//  // This reconnection logic will attempt to reconnect when a disconnection is detected.
+//  // To avoid rate limites, this logic implements exponential backoff, so the wait time
+//  // will increase if the client cannot reconnect to the stream.
+//
+//  const stream = streamConnect(token);
+//  let timeout = 0;
+//  stream.on('timeout', () => {
+//    // Reconnect on error
+//    console.warn('A connection error occurred. Reconnecting…');
+//    setTimeout(() => {
+//      timeout++;
+//      streamConnect(token);
+//    }, 2 ** timeout);
+//    streamConnect(token);
+//  });
+//})();
 
 
 console.log('listening on port 8080');

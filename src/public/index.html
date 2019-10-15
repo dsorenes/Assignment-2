@@ -16,6 +16,7 @@
 
   <!-- Custom styles for this template -->
   <link href="css/heroic-features.css" rel="stylesheet">
+  <link href="css/masonry.css" rel="stylesheet">
 
 </head>
 
@@ -58,59 +59,34 @@
             <div class="input-group-prepend">
               <span class="input-group-text" id="">#</span>
             </div>
-            <input type="text" class="form-control" placeholder="Hashtags" aria-label="Hashtags" aria-describedby="basic-addon1">
-            <button type="button" class="btn btn-primary">Search</button>
+            <input type="text" data-role="tagsinput" class="form-control" id="hashtags" placeholder="Hashtags" aria-label="Hashtags" aria-describedby="basic-addon1">
+            <button type="button" data-toggle="button" aria-pressed="false" class="btn btn-primary" id="search">Search</button>
           </div>
     </header>
 
     <!-- Page Features -->
-    <div class="row text-center">
+    <div class="masonry-with-columns">
+        <div class="row text-left no-gutters masonry-with-columns" id="tweets">
 
-      <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title">Card title</h4>
-            <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sapiente esse necessitatibus neque.</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-md-6 mb-4">
-          <div class="card">
-            <div class="card-body">
-              <h4 class="card-title">Card title</h4>
-              <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sapiente esse necessitatibus neque.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6 mb-4">
-            <div class="card">
-              <div class="card-body">
-                <h4 class="card-title">Card title</h4>
-                <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sapiente esse necessitatibus neque.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-3 col-md-6 mb-4">
-              <div class="card">
-                <div class="card-body">
-                  <h4 class="card-title">Card title</h4>
-                  <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sapiente esse necessitatibus neque.</p>
+            <!--        <div class="col-sm-4">
+                    <div class="card">
+                          <div class="card-body">
+                            <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sapiente esse necessitatibus neque.weriogjweprogjewprogjewrpogi jewprgji wpogj wpoeirgj poewrgj peworgj pweorgj ewprogi jwerpgoj ewpogiejwr gpoewirjg epwogij erpoigjewr pgoierjg poi</p>
+                          </div>
+                    </div>
+                  </div> -->
+            
                 </div>
-              </div>
-            </div>
-
+                <!-- /.row -->
     </div>
-    <!-- /.row -->
+    
 
   </div>
   <!-- /.container -->
 
   <!-- Bootstrap core JavaScript -->
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
-
+  <script src="client.js"></script>
 </body>
 
 </html>
