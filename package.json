@@ -1,0 +1,27 @@
+{
+  "name": "assignment-2",
+  "version": "1.0.0",
+  "description": "CAB432 assignment-2",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dsorenes/Assignment-2.git"
+  },
+  "author": "Daniel Sørenes",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dsorenes/Assignment-2/issues"
+  },
+  "homepage": "https://github.com/dsorenes/Assignment-2#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^8.1.0",
+    "express": "^4.17.1",
+    "nodemon": "^1.19.3",
+    "request": "^2.88.0"
+  }
+}
