@@ -1,0 +1,53 @@
+.masonry-with-columns {
+    display: flex;
+    flex-wrap: wrap;
+}
+.masonry-with-columns div {
+    margin: 0 1rem 1rem 0;
+    flex: 1 0 auto;
+} 
+
+body {
+    padding-top: 1em;
+}
+
+.main-input {
+    height: 35px;
+}
+
+#filter {
+    display: flex;
+}
+
+.badge {
+    font-size: 90%;
+}
+
+#hashtags {
+    font-size: 90%;
+}
+
+#tweets {
+    display: flex;
+    flex-flow: wrap-reverse;
+    flex-direction: row;
+}
+
+#tweet {
+    font-size: 15px;
+}
+
+#hashtag-filter {
+    height: 1.5em;
+}
+
+.delete {
+    background: none;
+	color: inherit;
+	border: none;
+	padding: 0;
+	font: inherit;
+	cursor: pointer;
+    outline: inherit;
+    size: 12px;
+}
