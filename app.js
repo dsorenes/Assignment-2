@@ -37,16 +37,17 @@ app.get('/get/tweets/next', async (req, res) => {
 
 app.get('/get/tweets', async (req, res) => {
   let max_id = req.query.max_id !== undefined ? `max_id=${req.query.max_id}` : "";
-  let q = req.query.q !== undefined ? `q=${encodeURIComponent(req.query.q).replace(/%20/gi, '+')}` : "";
+  let min_id = req.query.min_id !== undefined ? `min_id=${req.query.min_id}` : "";
+  let q = req.query.q !== undefined ? `q=${encodeURIComponent(req.query.q)}` : "";
   let include_entities = req.query.include_entities !== undefined ? `include_entities=${req.query.include_entities}` : "";
-  query = `?${max_id}${max_id ? '&' + q : q}${include_entities ? '&' + include_entities : include_entities}&count=100`;
+  query = `?${max_id}${max_id ? '&' + min_id : min_id}${max_id ? '&' + q : q}${include_entities ? '&' + include_entities : include_entities}&count=100`;
   console.log(query);
   try {
     oa.get(`https://api.twitter.com/1.1/search/tweets.json${query}`, access_token, access_secret, (error, data, response) => {
       if (error) {
         console.log(error);
       }
-      console.log(data.length);
+      console.log(data);
       let tweets = JSON.parse(data);
       let parsed_tweets = parse(tweets);
       res.send(parsed_tweets);
@@ -63,9 +64,22 @@ function parse(data) {
   tweet.user.screen_name
   tweet.entities
   tweet.lang */
+
+  if (data === undefined || data.statuses === undefined) {
+    return {'error': "no tweets available"};
+  }
   let new_tweets = [];
   tweets = data.statuses;
+  let max_id = tweets[0].id;
+  let min_id = tweets[0].id;
   for (let i = 0; i < data.statuses.length; i++) {
+    let id = tweets[i].id;
+    if (id < min_id) {
+      min_id = id;
+    }
+    if (id > max_id) {
+      max_id = id;
+    }
     let full_text = '';
     let text = tweets[i].text;
     let entities = tweets[i].entities.hashtags;
@@ -96,6 +110,8 @@ function parse(data) {
 
   }
   data.statuses = new_tweets;
+  data.search_metadata['min_id'] = min_id;
+  data.search_metadata['maximum_id'] = max_id - 1;
 
   return data;
 }

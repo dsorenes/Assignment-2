@@ -24,13 +24,12 @@ input.addEventListener('keyup', (text) => {
 search.addEventListener('click', async () => {
     let tags = "?q=";
     for (let i in hash) {
-        tags += `${encodeURIComponent(hash[i])}+`;
+        tags += `${encodeURIComponent(hash[i])}+OR+`;
     }
-    console.log(tags.slice(0, -1));
     if (search.classList.contains('btn-primary')) {
         search.className = "main-input btn btn-danger";
         search.innerHTML = "Searching..";
-        await getTweets(tags.slice(0, -1));
+        await getTweets(tags.slice(0, -4));
     } else {
         search.className = "main-input btn btn-primary";
         search.innerHTML = "Search";

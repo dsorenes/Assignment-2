@@ -1,6 +1,6 @@
 const tweets = document.querySelector('#tweets');
+
 let getTweets = async (query, count = 0, amount_of_tweets = 500) => {
-    let old_query = query;
     const options = {
         method: 'GET',
         headers : {
@@ -13,9 +13,6 @@ let getTweets = async (query, count = 0, amount_of_tweets = 500) => {
         return response.json();
     })
     .then(async (data) => {
-        if (data ===  undefined) {
-            getTweets(old_query, count);
-        }
         console.log(data);
         for (let i = 0; i < data.statuses.length; i++) {
             let tweet = data.statuses[i];
@@ -33,20 +30,22 @@ let getTweets = async (query, count = 0, amount_of_tweets = 500) => {
             tweets.innerHTML += tweet_template;
         }
         let amount = data.statuses.length + count;
-        let next_results = data.search_metadata.next_results;
+
+        let min_id = data.search_metadata.min_id;
+        let max_id = data.search_metadata.maximum_id;
+        let new_query = `?max_id=${min_id}&since_id=${max_id}&q=${data.search_metadata.query}&include_entities=1`;
+        if (min_id === max_id) {
+            console.log("finito");
+            return "finished";
+        }
+        console.log(new_query);
         if (amount < amount_of_tweets) {
             console.log(amount);
-            getTweets(next_results, amount);
+            getTweets(new_query, amount);
         } else {
             console.log("finished");
         }
     }).catch((e) => console.log(e));
-}
-
-let showTweets ={
-    render: async () => {
-
-    }
 }
 
 export default getTweets;
