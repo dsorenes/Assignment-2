@@ -26,10 +26,11 @@ search.addEventListener('click', async () => {
     for (let i in hash) {
         tags += `${encodeURIComponent(hash[i])}+OR+`;
     }
+    tags = tags.slice(0, -4);
     if (search.classList.contains('btn-primary')) {
         search.className = "main-input btn btn-danger";
         search.innerHTML = "Searching..";
-        await getTweets(tags.slice(0, -4));
+        await getTweets(tags, 300);
     } else {
         search.className = "main-input btn btn-primary";
         search.innerHTML = "Search";
