@@ -36,7 +36,7 @@ app.get("/get/tweets", async (req, res) => {
     //maybe another API endpoint with streaming/not streaming
     //if streaming we get_tweets, if not streaming we send tweets
     getTweets(query, amount_of_tweets, null, function (tweets) {
-        tokenize(tweets);
+        featureExtraction(tweets, 50);
         res.send(tweets);
     });
 
@@ -108,15 +108,22 @@ function tokenize(tweets) {
     return data;
 }
 
-function featureExtraction(tweets) {
+function featureExtraction(tweets, amount = 100) {
     let TfIdf = natural.TfIdf;
     let tfidf = new TfIdf();
+    
+    let words = tokenize(tweets);
+    document = words.map(tweet => {
+        return tweet.join(' ');
+    }).join(' ');
 
-    tweets.forEach(tweet => tfidf.addDocument())
-}
+    document = tfidf.addDocument(document);
 
-function analyseTweets(tweets) {
-
+    for (let i = 0; i < amount; i++) {
+        let features = tfidf.listTerms(0);
+        
+        console.log(features[i].term + ': ' + features[i].tfidf);
+    }
 
 }
 
