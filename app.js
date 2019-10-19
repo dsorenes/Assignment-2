@@ -2,8 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const OAuth = require("oauth").OAuth;
-const natural = require('natural');
-const nlp = require('compromise');
+
+const featureExtraction = require('./analyseTweets.js');
+
 dotenv.config();
 
 const app = express();
@@ -26,17 +27,22 @@ oa = new OAuth(
 );
 
 let count = 0;
+
 app.get("/get/tweets", async (req, res) => {
     let amount_of_tweets = req.query.amount;
-    query = `?max_id=${req.query.max_id}&since_id=${req.query.min_id}&q=${encodeURIComponent(req.query.q)}&include_entities=1&count=100`;
+
+    const query = `?max_id=${req.query.max_id}&since_id=${req.query.min_id}&q=${encodeURIComponent(req.query.q)}&include_entities=1&count=100`;
 
     console.log(`${count++}: ${req.hostname}: ${query}`);
 
     //might be able to not need amount of tweets in function.
     //maybe another API endpoint with streaming/not streaming
     //if streaming we get_tweets, if not streaming we send tweets
-    getTweets(query, amount_of_tweets, null, function (tweets) {
-        featureExtraction(tweets, 50);
+    getTweets(query, amount_of_tweets, null, tweets => {
+        let top_features = featureExtraction(tweets, 50);
+        for (let [feature_name, feature_score] of top_features) {
+            console.log(feature_name + ": " + feature_score);
+        }
         res.send(tweets);
     });
 
@@ -44,6 +50,7 @@ app.get("/get/tweets", async (req, res) => {
 
 let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => {
     let old_data = data;
+
     try {
       oa.get(
         `https://api.twitter.com/1.1/search/tweets.json${query}&lang=en`,
@@ -62,7 +69,9 @@ let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => 
           }
 
           let total = parsed_tweets.statuses.length;
+
           console.log(total);
+
           if (total < amount_of_tweets) {
             let min_id = parsed_tweets.search_metadata.min_id;
             let max_id = parsed_tweets.search_metadata.maximum_id;
@@ -71,60 +80,16 @@ let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => 
             let new_query = `?max_id=${max_id}&since_id=${min_id}&q=${old_query}&include_entities=1&count=100`;
 
             getTweets(new_query, amount_of_tweets, parsed_tweets, callback);
+
           } else {
             callback(parsed_tweets);
           }
+
         });
+
     } catch (e) {
       console.log(e);
     }
-}
-
-function tokenize(tweets) {
-    const stopwords = require('./stopwords.js');
-    let tokenizer = new natural.RegexpTokenizer({pattern: /[!@$%^&*(),.?":{}|<>'(...)]/g});
-
-    let data = tweets.statuses.map(tweet => {
-        let normalised = nlp(tweet.text).normalize({
-            whitespace: true,
-            unicode: true,
-            contractions: true,
-            acronyms: true,
-            possessives: true,
-            plurals: true,
-            verbs: true
-
-        }).out('text');
-        let words = normalised.split(' ');
-        words = words.filter(word => stopwords.includes(word) === false
-        && word.includes('https') === false
-        && word.includes('…') === false
-        && word.includes('@') === false).join('.');
-
-        return words;
-    });
-    data = data.map(tweet => tokenizer.tokenize(tweet));
-
-    return data;
-}
-
-function featureExtraction(tweets, amount = 100) {
-    let TfIdf = natural.TfIdf;
-    let tfidf = new TfIdf();
-    
-    let words = tokenize(tweets);
-    document = words.map(tweet => {
-        return tweet.join(' ');
-    }).join(' ');
-
-    document = tfidf.addDocument(document);
-
-    for (let i = 0; i < amount; i++) {
-        let features = tfidf.listTerms(0);
-        
-        console.log(features[i].term + ': ' + features[i].tfidf);
-    }
-
 }
 
 function parse(data) {
@@ -141,6 +106,10 @@ function parse(data) {
     tweets = tweets.map(tweet => {
         let id = tweet.id;
 
+        let text = tweet.text;
+        let entities = tweet.entities.hashtags;
+        let retweet = false;
+
         if (id < min_id) {
             min_id = id;
         }
@@ -149,9 +118,6 @@ function parse(data) {
             max_id = id;
         }
 
-        let text = tweet.text;
-        let entities = tweet.entities.hashtags;
-        let retweet = false;
 
         const properties = Object.getOwnPropertyNames(tweet);
 
@@ -159,6 +125,7 @@ function parse(data) {
             retweet = true;
 
             const retweet_status = Object.getOwnPropertyNames(tweet.retweeted_status);
+
             if (retweet_status.includes("extended_tweet")) {
                 text = tweet.retweeted_status.extended_tweet.full_text;
                 entities = tweet.retweeted_status.extended_tweet.entities.hashtags;
@@ -178,6 +145,7 @@ function parse(data) {
         if (entities.length > 0) {
             new_tweets.push(new_tweet);
         }
+
     });
 
     data.statuses = new_tweets;
