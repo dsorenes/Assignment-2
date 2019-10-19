@@ -18,9 +18,11 @@
   },
   "homepage": "https://github.com/dsorenes/Assignment-2#readme",
   "dependencies": {
+    "compromise": "^11.14.3",
     "cors": "^2.8.5",
     "dotenv": "^8.1.0",
     "express": "^4.17.1",
+    "natural": "^0.6.3",
     "ndjson": "^1.5.0",
     "nodemon": "^1.19.3",
     "oauth": "^0.9.15",
