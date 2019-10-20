@@ -3,7 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const OAuth = require("oauth").OAuth;
 
-const featureExtraction = require('./analyseTweets.js');
+const analyseTweets = require('./analyseTweets.js');
 
 dotenv.config();
 
@@ -39,10 +39,11 @@ app.get("/get/tweets", async (req, res) => {
     //maybe another API endpoint with streaming/not streaming
     //if streaming we get_tweets, if not streaming we send tweets
     getTweets(query, amount_of_tweets, null, tweets => {
-        let top_features = featureExtraction(tweets, 50);
+        let top_features = analyseTweets.featureExtraction(tweets, 50);
         for (let [feature_name, feature_score] of top_features) {
             console.log(feature_name + ": " + feature_score);
         }
+        let sentimentAnalysis = analyseTweets.tweetsSentiment(tweets);
         res.send(tweets);
     });
 

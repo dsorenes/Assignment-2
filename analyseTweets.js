@@ -2,9 +2,17 @@ const natural = require('natural');
 const nlp = require('compromise');
 
 let tokenize = (tweets) => {
-    const stopwords = require('./stopwords.js');
     let tokenizer = new natural.RegexpTokenizer({pattern: /[!@$%^&*(),.?":{}|<>'(...)]/g});
 
+    let data = tweetsProcessing(tweets, true);
+
+    data = data.map(tweet => tokenizer.tokenize(tweet));
+
+    return data;
+}
+
+let tweetsProcessing = (tweets, filter = false) => {
+    const stopwords = require('./stopwords.js');
     let data = tweets.statuses.map(tweet => {
         let normalised = nlp(tweet.text).normalize({
             whitespace: true,
@@ -18,20 +26,44 @@ let tokenize = (tweets) => {
 
         let words = normalised.split(' ');
 
-        words = words.filter(word => stopwords.includes(word) === false
-        && word.includes('https') === false
+        if (filter) {
+            words = words.filter(word => stopwords.includes(word) === false);
+        }
+
+        words = words.filter(word => word.includes('https') === false
         && word.includes('…') === false
         && word.includes('@') === false
-        && word.includes('amp')).join('.');
+        && word.includes('amp') === false
+        && word.includes('rt') === false
+        && word.includes('https') === false).join('.');
 
         return words;
-    });
-    data = data.map(tweet => tokenizer.tokenize(tweet));
+    }); 
 
     return data;
 }
 
-module.exports = featureExtraction = (tweets, amount = 100) => {
+let tweetsSentiment = (tweets) => {
+    const Analyzer = require('natural').SentimentAnalyzer;
+    let stemmer = require('natural').PorterStemmer;
+    let analyzer = new Analyzer("English", stemmer, "afinn");
+
+    let data = tweetsProcessing(tweets);
+
+    let analysedTweets = data.map(tweet => {
+        let tweetArray = tweet.split('.');
+        return analyzer.getSentiment(tweetArray);
+    });
+    console.log(analysedTweets);
+
+    /* 
+        if score > 0 then positive
+        if score < 0 then negative
+        else neutral
+    */
+
+}
+let featureExtraction = (tweets, amount = 100) => {
     let TfIdf = natural.TfIdf;
     let tfidf = new TfIdf();
     
@@ -51,3 +83,5 @@ module.exports = featureExtraction = (tweets, amount = 100) => {
 
     return features;
 }
+
+module.exports = {featureExtraction, tweetsSentiment};
