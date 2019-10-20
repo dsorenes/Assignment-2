@@ -39,11 +39,13 @@ app.get("/get/tweets", async (req, res) => {
     //maybe another API endpoint with streaming/not streaming
     //if streaming we get_tweets, if not streaming we send tweets
     getTweets(query, amount_of_tweets, null, tweets => {
-        let top_features = analyseTweets.featureExtraction(tweets, 50);
+        let amount_of_features = 50;
+        let top_features = analyseTweets.featureExtraction(tweets, amount_of_features);
         for (let [feature_name, feature_score] of top_features) {
             console.log(feature_name + ": " + feature_score);
         }
         let sentimentAnalysis = analyseTweets.tweetsSentiment(tweets);
+        console.log(sentimentAnalysis);
         res.send(tweets);
     });
 

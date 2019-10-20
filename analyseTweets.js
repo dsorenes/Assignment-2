@@ -51,18 +51,26 @@ let tweetsSentiment = (tweets) => {
     let data = tweetsProcessing(tweets);
 
     let analysedTweets = data.map(tweet => {
-        let tweetArray = tweet.split('.');
-        return analyzer.getSentiment(tweetArray);
+        let score = analyzer.getSentiment(tweet.split('.'));
+        let category = 'neutral';
+
+        if (score > 0) {
+            category = 'positive';
+        }
+
+        if (score < 0) {
+            category = 'negative';
+        }
+
+        return {
+            tweet_text: tweet.split('.').join(' '),
+            score: score,
+            category: category
+            }
     });
-    console.log(analysedTweets);
-
-    /* 
-        if score > 0 then positive
-        if score < 0 then negative
-        else neutral
-    */
-
+    return analysedTweets;
 }
+
 let featureExtraction = (tweets, amount = 100) => {
     let TfIdf = natural.TfIdf;
     let tfidf = new TfIdf();
