@@ -41,12 +41,18 @@ app.get("/get/tweets", async (req, res) => {
     getTweets(query, amount_of_tweets, null, tweets => {
         let amount_of_features = 50;
         let top_features = analyseTweets.featureExtraction(tweets, amount_of_features);
-        for (let [feature_name, feature_score] of top_features) {
-            console.log(feature_name + ": " + feature_score);
-        }
+
         let sentimentAnalysis = analyseTweets.tweetsSentiment(tweets);
-        console.log(sentimentAnalysis);
-        res.send(tweets);
+
+        let hashtagCount = analyseTweets.hashtagsCount(tweets);
+
+        let tweetAnalysis = {
+            most_important_words: top_features,
+            sentimentAnalysis_per_tweet: sentimentAnalysis,
+            hashtagCount: hashtagCount
+        };
+        res.send(tweetAnalysis);
+
     });
 
 });
