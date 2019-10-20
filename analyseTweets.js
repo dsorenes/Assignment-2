@@ -106,4 +106,13 @@ let featureExtraction = (tweets, amount = 100) => {
     return features;
 }
 
-module.exports = {featureExtraction, tweetsSentiment, hashtagsCount};
+module.exports = analyseTweets = (tweets) => {
+    let top_features = featureExtraction(tweets);
+    let sentimentAnalysis = tweetsSentiment(tweets);
+    let hashtagCount = hashtagsCount(tweets);
+    return {
+        most_important_words: top_features,
+        sentimentAnalysis_per_tweet: sentimentAnalysis,
+        hashtagCount: hashtagCount
+    };
+}

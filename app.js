@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const OAuth = require("oauth").OAuth;
 
 const analyseTweets = require('./analyseTweets.js');
+const utils = require('./utils.js');
 
 dotenv.config();
 
@@ -39,18 +40,7 @@ app.get("/get/tweets", async (req, res) => {
     //maybe another API endpoint with streaming/not streaming
     //if streaming we get_tweets, if not streaming we send tweets
     getTweets(query, amount_of_tweets, null, tweets => {
-        let amount_of_features = 50;
-        let top_features = analyseTweets.featureExtraction(tweets, amount_of_features);
-
-        let sentimentAnalysis = analyseTweets.tweetsSentiment(tweets);
-
-        let hashtagCount = analyseTweets.hashtagsCount(tweets);
-
-        let tweetAnalysis = {
-            most_important_words: top_features,
-            sentimentAnalysis_per_tweet: sentimentAnalysis,
-            hashtagCount: hashtagCount
-        };
+        let tweetAnalysis = analyseTweets(tweets);
         res.send(tweetAnalysis);
 
     });
@@ -72,7 +62,7 @@ let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => 
   
           let tweets = JSON.parse(data);
   
-          let parsed_tweets = parse(tweets);
+          let parsed_tweets = utils.parseTweets(tweets);
           if (old_data !== null) {
               parsed_tweets.statuses = old_data.statuses.concat(parsed_tweets.statuses);
           }
@@ -99,69 +89,6 @@ let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => 
     } catch (e) {
       console.log(e);
     }
-}
-
-function parse(data) {
-    if (data === undefined || data.statuses === undefined) {
-        return { error: "no tweets available" };
-    }
-
-    let new_tweets = [];
-    let tweets = data.statuses;
-
-    let max_id = tweets[0].id;
-    let min_id = tweets[0].id;
-
-    tweets = tweets.map(tweet => {
-        let id = tweet.id;
-
-        let text = tweet.text;
-        let entities = tweet.entities.hashtags;
-        let retweet = false;
-
-        if (id < min_id) {
-            min_id = id;
-        }
-
-        if (id > max_id) {
-            max_id = id;
-        }
-
-
-        const properties = Object.getOwnPropertyNames(tweet);
-
-        if (properties.includes("retweeted_status")) {
-            retweet = true;
-
-            const retweet_status = Object.getOwnPropertyNames(tweet.retweeted_status);
-
-            if (retweet_status.includes("extended_tweet")) {
-                text = tweet.retweeted_status.extended_tweet.full_text;
-                entities = tweet.retweeted_status.extended_tweet.entities.hashtags;
-            }
-        }
-
-        let new_tweet = {
-            text: text,
-            username: tweet.user.name,
-            screen_name: tweet.user.screen_name,
-            created_at: tweet.created_at,
-            hashtags: entities,
-            language: tweet.lang,
-            retweet: retweet
-        };
-
-        if (entities.length > 0) {
-            new_tweets.push(new_tweet);
-        }
-
-    });
-
-    data.statuses = new_tweets;
-    data.search_metadata["min_id"] = min_id;
-    data.search_metadata["maximum_id"] = max_id - 1;
-
-    return data;
 }
 
 console.log("listening on port 8080");
