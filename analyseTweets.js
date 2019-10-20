@@ -20,9 +20,16 @@ let hashtagsCount = (tweets) => {
     //Produces a map with key: hashtag, value: occurences
     const counted = hashtags.reduce((counted, hashtag) => counted.set(hashtag, 1 + (counted.get(hashtag) || 0)), new Map());
     let countedSorted = new Map([...counted.entries()].sort((a, b) => b[1] - a[1]));
-    const countedObj = Array.from(countedSorted.entries()).reduce((main, [key, value]) => ({...main, [key]: value}), {})
 
-    return countedObj;
+    let hashtagsCount = [];
+    for (let [key, value] of countedSorted) {
+        hashtagsCount.push({
+            hashtag: key,
+            count: value
+        });
+    }
+
+    return hashtagsCount;
 }
 
 let tweetsProcessing = (tweets, filter = false) => {
@@ -95,12 +102,15 @@ let featureExtraction = (tweets, amount = 100) => {
 
     document = tfidf.addDocument(document);
 
-    let features = {};
+    let features = [];
 
     for (let i = 0; i < amount; i++) {
         let feature_list = tfidf.listTerms(0);
         
-        features[feature_list[i].term] = feature_list[i].tfidf;
+        features.push(hashtag = {
+            word: feature_list[i].term,
+            importance: feature_list[i].tfidf
+        });
     }
 
     return features;
