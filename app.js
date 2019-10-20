@@ -36,9 +36,6 @@ app.get("/get/tweets", async (req, res) => {
 
     console.log(`${count++}: ${req.hostname}: ${query}`);
 
-    //might be able to not need amount of tweets in function.
-    //maybe another API endpoint with streaming/not streaming
-    //if streaming we get_tweets, if not streaming we send tweets
     getTweets(query, amount_of_tweets, null, tweets => {
         let tweetAnalysis = analyseTweets(tweets);
         res.send(tweetAnalysis);
@@ -68,15 +65,19 @@ let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => 
           }
 
           let total = parsed_tweets.statuses.length;
-
           console.log(total);
 
+          let difference = Math.abs(amount_of_tweets - total);
+
           if (total < amount_of_tweets) {
+            let count = difference > 100 ? 100 : difference;
+
             let min_id = parsed_tweets.search_metadata.min_id;
             let max_id = parsed_tweets.search_metadata.maximum_id;
+
             let old_query = parsed_tweets.search_metadata.query;
 
-            let new_query = `?max_id=${max_id}&since_id=${min_id}&q=${old_query}&include_entities=1&count=100`;
+            let new_query = `?max_id=${max_id}&since_id=${min_id}&q=${old_query}&include_entities=1&count=${count}`;
 
             getTweets(new_query, amount_of_tweets, parsed_tweets, callback);
 

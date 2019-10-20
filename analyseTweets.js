@@ -89,6 +89,7 @@ let tweetsSentiment = (tweets) => {
             category: category
             }
     });
+
     return analysedTweets;
 }
 
@@ -120,6 +121,7 @@ module.exports = analyseTweets = (tweets) => {
     let top_features = featureExtraction(tweets);
     let sentimentAnalysis = tweetsSentiment(tweets);
     let hashtagCount = hashtagsCount(tweets);
+    
     return {
         most_important_words: top_features,
         sentimentAnalysis_per_tweet: sentimentAnalysis,
