@@ -76,6 +76,7 @@ app.get("/get/tweets", async (req, res) => {
             }
         } else {
             //check if it's in S3
+            //need to do the same here as with the cache. If the total amount is larger than what already is in S3, fetch from API as well and update S3 content with new amount
             const params = {Bucket: bucketName, Key: bucketKey};
 
             return new AWS.S3({ apiVersion: "2006-03-1" })
