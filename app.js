@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const OAuth = require("oauth").OAuth;
 const redis = require('redis');
+const AWS = require('aws-sdk');
 
 const redisClient = redis.createClient();
 
@@ -32,22 +33,23 @@ oa = new OAuth(
     "HMAC-SHA1"
 );
 
-let count = 0;
+const bucketName = 'cab432anshuldaniel-hashtag-analysis-storage';
+
+const bucketPromise = new AWS.S3({ apiVersion: "2006-03-01" })
+    .createBucket({ Bucket: bucketName})
+    .promise()
+    .then(data => console.log("created: ", bucketName))
+    .catch(error => console.log(error, error.stack));
 
 app.get("/get/tweets", async (req, res) => {
     let amount_of_tweets = req.query.amount;
-    let hashtagQuery = encodeURIComponent(req.query.q);
-    const redisKey = `hashtags:${hashtagQuery}`;
-    console.log(redisKey);
-    const query = `?max_id=${req.query.max_id}&since_id=${req.query.min_id}&q=${hashtagQuery}&include_entities=1&count=100`;
 
-    /* 
-        check if redisKey exists
-        if it exists, return it
-        if not exists, check S3
-        if not in S3, fetch it, then
-        store it in both cache and S3
-    */
+    let hashtagQuery = encodeURIComponent(req.query.q);
+
+    const redisKey = `hashtags:${hashtagQuery}`;
+    const bucketKey = `hashtags-${hashtagQuery}`;
+
+    const query = `?max_id=${req.query.max_id}&since_id=${req.query.min_id}&q=${hashtagQuery}&include_entities=1&count=100`;
 
     return redisClient.get(redisKey, (error, result) => {
         if (error) console.log(error);
@@ -67,18 +69,42 @@ app.get("/get/tweets", async (req, res) => {
 
                     redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysisFromCache));
 
-                    return res.send({ source: "Redis cache and Twitter API", tweetAnalysisFromCache });
+                    return res.status(200).send({ source: "Redis cache and Twitter API", tweetAnalysisFromCache });
                 })
             } else {
-                return res.send({ source: "Redis cache", tweetAnalysis});
+                return res.status(200).send({ source: "Redis cache", tweetAnalysis});
             }
         } else {
-            getTweets(query, amount_of_tweets, null, tweets => {
-                let tweetAnalysis = analyseTweets(tweets);
-                redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysis));
-                res.status(200).send({ source: "Twitter API", tweetAnalysis });
-        
-            });
+            //check if it's in S3
+            const params = {Bucket: bucketName, Key: bucketKey};
+
+            return new AWS.S3({ apiVersion: "2006-03-1" })
+                .getObject(params, (error, result) => {
+                    if (result) {
+                        let data = result.Body.toString("utf-8");
+
+                        let tweetAnalysis = JSON.parse(data);
+
+                        redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysis));
+
+                        return res.status(200).send({ source: "S3 storage", tweetAnalysis});
+                    } else {
+                        getTweets(query, amount_of_tweets, null, tweets => {
+                            let tweetAnalysis = analyseTweets(tweets);
+                            redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysis));
+
+                            new AWS.S3({ apiVersion: "2006-03-01" })
+                            .putObject({Bucket: bucketName, Key: bucketKey, Body: JSON.stringify(tweetAnalysis)})
+                            .promise()
+                            .then(data => console.log("successfully uploaded data to ", bucketName, bucketKey));
+
+                            res.status(200).send({ source: "Twitter API", tweetAnalysis });
+                    
+                        });
+                    }
+                })
+
+            
         }
     });
 
