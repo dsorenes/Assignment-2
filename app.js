@@ -2,6 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const OAuth = require("oauth").OAuth;
+const redis = require('redis');
+
+const redisClient = redis.createClient();
+
+redisClient.on_connect('error', error => console.log(error));
 
 const analyseTweets = require('./analyseTweets.js');
 const utils = require('./utils.js');
@@ -18,28 +23,44 @@ const access_token = process.env.ACCESS_TOKEN;
 const access_secret = process.env.ACCESS_SECRET;
 
 oa = new OAuth(
-  "https://api.twitter.com/oauth/request_token",
-  "https://api.twitter.com/oauth/access_token",
-  consumer_key,
-  consumer_secret,
-  "1.0",
-  "",
-  "HMAC-SHA1"
+    "https://api.twitter.com/oauth/request_token",
+    "https://api.twitter.com/oauth/access_token",
+    consumer_key,
+    consumer_secret,
+    "1.0",
+    "",
+    "HMAC-SHA1"
 );
 
 let count = 0;
 
 app.get("/get/tweets", async (req, res) => {
     let amount_of_tweets = req.query.amount;
+    let hashtagQuery = encodeURIComponent(req.query.q);
+    const redisKey = `hashtags:${hashtagQuery}`;
+    console.log(redisKey);
+    const query = `?max_id=${req.query.max_id}&since_id=${req.query.min_id}&q=${hashtagQuery}&include_entities=1&count=100`;
 
-    const query = `?max_id=${req.query.max_id}&since_id=${req.query.min_id}&q=${encodeURIComponent(req.query.q)}&include_entities=1&count=100`;
+    /* 
+        check if redisKey exists
+        if it exists, return it
+        if not exists, check S3
+        if not in S3, fetch it, then
+        store it in both cache and S3
+    */
 
-    console.log(`${count++}: ${req.hostname}: ${query}`);
-
-    getTweets(query, amount_of_tweets, null, tweets => {
-        let tweetAnalysis = analyseTweets(tweets);
-        res.send(tweetAnalysis);
-
+    return redisClient.get(redisKey, (error, result) => {
+        if (result) {
+            const tweetAnalysis = JSON.parse(result);
+            return res.status(200).send(tweetAnalysis);
+        } else {
+            getTweets(query, amount_of_tweets, null, tweets => {
+                let tweetAnalysis = analyseTweets(tweets);
+                redisClient.setex(redisKey, 3600, JSON.stringify({ source: "Redis Cache", tweetAnalysis }));
+                res.status(200).send({ source: "Twitter API", tweetAnalysis });
+        
+            });
+        }
     });
 
 });
