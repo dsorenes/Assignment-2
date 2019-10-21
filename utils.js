@@ -5,7 +5,6 @@ let parseTweets = (data) => {
 
     let new_tweets = [];
     let tweets = data.statuses;
-
     let max_id = tweets[0].id;
     let min_id = tweets[0].id;
 
@@ -59,6 +58,10 @@ let parseTweets = (data) => {
     data.search_metadata["maximum_id"] = max_id - 1;
 
     return data;
+}
+
+let mergeObjects = (object1, object2) => {
+
 }
 
 module.exports = {parseTweets};

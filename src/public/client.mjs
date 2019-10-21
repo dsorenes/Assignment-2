@@ -29,7 +29,7 @@ search.addEventListener('click', async () => {
     if (search.classList.contains('btn-primary')) {
         search.className = "main-input btn btn-danger";
         search.innerHTML = "Searching..";
-        await getTweets(tags, 500);
+        await getTweets(tags, 900);
     } else {
         search.className = "main-input btn btn-primary";
         search.innerHTML = "Search";

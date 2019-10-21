@@ -123,6 +123,7 @@ module.exports = analyseTweets = (tweets) => {
     let hashtagCount = hashtagsCount(tweets);
     
     return {
+        amount_of_tweets: sentimentAnalysis.length,
         most_important_words: top_features,
         sentimentAnalysis_per_tweet: sentimentAnalysis,
         hashtagCount: hashtagCount

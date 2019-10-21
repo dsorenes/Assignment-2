@@ -50,13 +50,32 @@ app.get("/get/tweets", async (req, res) => {
     */
 
     return redisClient.get(redisKey, (error, result) => {
+        if (error) console.log(error);
         if (result) {
             const tweetAnalysis = JSON.parse(result);
-            return res.status(200).send(tweetAnalysis);
+            console.log(tweetAnalysis);
+            let tweetAnalysisFromCache = tweetAnalysis;
+            if (amount_of_tweets > tweetAnalysisFromCache.amount_of_tweets) {
+                let amount = amount_of_tweets - tweetAnalysisFromCache.amount_of_tweets;
+                getTweets(query, amount, null, tweets => {
+                    let tweetAnalysisFromAPI = analyseTweets(tweets);
+
+                    tweetAnalysisFromCache.amount_of_tweets += tweetAnalysisFromAPI.amount_of_tweets;
+                    tweetAnalysisFromCache.most_important_words.push(...tweetAnalysisFromAPI.most_important_words);
+                    tweetAnalysisFromCache.sentimentAnalysis_per_tweet.push(...tweetAnalysisFromAPI.sentimentAnalysis_per_tweet);
+                    tweetAnalysisFromCache.hashtagCount.push(...tweetAnalysisFromAPI.hashtagCount);
+
+                    redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysisFromCache));
+
+                    return res.send({ source: "Redis cache and Twitter API", tweetAnalysisFromCache });
+                })
+            } else {
+                return res.send({ source: "Redis cache", tweetAnalysis});
+            }
         } else {
             getTweets(query, amount_of_tweets, null, tweets => {
                 let tweetAnalysis = analyseTweets(tweets);
-                redisClient.setex(redisKey, 3600, JSON.stringify({ source: "Redis Cache", tweetAnalysis }));
+                redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysis));
                 res.status(200).send({ source: "Twitter API", tweetAnalysis });
         
             });
@@ -77,8 +96,13 @@ let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => 
           if (error) {
             console.log(error);
           }
+
+          if (data === []) {
+              getTweets(query, amount_of_tweets, null, callback);
+          }
   
           let tweets = JSON.parse(data);
+
   
           let parsed_tweets = utils.parseTweets(tweets);
           if (old_data !== null) {
