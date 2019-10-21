@@ -1,131 +1,154 @@
-const natural = require('natural');
-const nlp = require('compromise');
+const natural = require("natural");
+const nlp = require("compromise");
 
-let tokenize = (tweets) => {
-    let tokenizer = new natural.RegexpTokenizer({pattern: /[!@$%^&*(),.?":{}|<>'(...)]/g});
+/* 
+Are quite many loops here (.map, forEach, .reduce, )
+Might want to refactor some of this to improve performance
+*/
 
-    let data = tweetsProcessing(tweets, true);
+let tokenize = tweets => {
+	let tokenizer = new natural.RegexpTokenizer({
+		pattern: /[!@$%^&*(),.?":{}|<>'(...)]/g
+	});
 
-    data = data.map(tweet => tokenizer.tokenize(tweet));
+	let data = tweetsProcessing(tweets, true);
 
-    return data;
-}
+	data = data.map(tweet => tokenizer.tokenize(tweet));
 
-let hashtagsCount = (tweets) => {
-    let hashtags = [];
-    tweets.statuses.forEach(tweet => {
-        tweet.hashtags.forEach(hashtag => hashtags.push(hashtag.text.toLowerCase()));
-    })
+	return data;
+};
 
-    //Produces a map with key: hashtag, value: occurences
-    const counted = hashtags.reduce((counted, hashtag) => counted.set(hashtag, 1 + (counted.get(hashtag) || 0)), new Map());
-    let countedSorted = new Map([...counted.entries()].sort((a, b) => b[1] - a[1]));
+let hashtagsCount = tweets => {
+	let hashtags = [];
+	tweets.statuses.forEach(tweet => {
+		tweet.hashtags.forEach(hashtag =>
+			hashtags.push(hashtag.text.toLowerCase())
+		);
+	});
+	//this can be refactored
+	//Produces a map with key: hashtag, value: occurences
+	const counted = hashtags.reduce(
+		(counted, hashtag) => counted.set(hashtag, 1 + (counted.get(hashtag) || 0)),
+		new Map()
+	);
+	let countedSorted = new Map(
+		[...counted.entries()].sort((a, b) => b[1] - a[1])
+	);
 
-    let hashtagsCount = [];
-    for (let [key, value] of countedSorted) {
-        hashtagsCount.push({
-            hashtag: key,
-            count: value
-        });
-    }
+	let hashtagsCount = [];
+	for (let [key, value] of countedSorted) {
+		hashtagsCount.push({
+			hashtag: key,
+			count: value
+		});
+	}
 
-    return hashtagsCount;
-}
+	return hashtagsCount;
+};
 
 let tweetsProcessing = (tweets, filter = false) => {
-    const stopwords = require('./stopwords.js');
-    let data = tweets.statuses.map(tweet => {
-        let normalised = nlp(tweet.text).normalize({
-            whitespace: true,
-            unicode: true,
-            contractions: true,
-            acronyms: true,
-            possessives: true,
-            plurals: true,
-            verbs: true
-        }).out('text');
+	const stopwords = require("./stopwords.js");
+	let data = tweets.statuses.map(tweet => {
+		let normalised = nlp(tweet.text)
+			.normalize({
+				whitespace: true,
+				unicode: true,
+				contractions: true,
+				acronyms: true,
+				possessives: true,
+				plurals: true,
+				verbs: true
+			})
+			.out("text");
 
-        let words = normalised.split(' ');
+		let words = normalised.split(" ");
 
-        if (filter) {
-            words = words.filter(word => stopwords.includes(word) === false);
-        }
+		if (filter) {
+			words = words.filter(word => stopwords.includes(word) === false);
+		}
 
-        words = words.filter(word => word.includes('https') === false
-        && word.includes('…') === false
-        && word.includes('@') === false
-        && word.includes('amp') === false
-        && word.includes('rt') === false
-        && word.includes('https') === false).join('.');
+		words = words
+			.filter(
+				word =>
+					word.includes("https") === false &&
+					word.includes("…") === false &&
+					word.includes("@") === false &&
+					word.includes("amp") === false &&
+					word.includes("rt") === false &&
+					word.includes("https") === false
+			)
+			.join(".");
 
-        return words;
-    }); 
+		return words;
+	});
 
-    return data;
-}
+	return data;
+};
 
-let tweetsSentiment = (tweets) => {
-    const Analyzer = require('natural').SentimentAnalyzer;
-    let stemmer = require('natural').PorterStemmer;
-    let analyzer = new Analyzer("English", stemmer, "afinn");
+let tweetsSentiment = tweets => {
+	const Analyzer = require("natural").SentimentAnalyzer;
+	let stemmer = require("natural").PorterStemmer;
+	let analyzer = new Analyzer("English", stemmer, "afinn");
 
-    let data = tweetsProcessing(tweets);
+	let data = tweetsProcessing(tweets);
 
-    let analysedTweets = data.map(tweet => {
-        let score = analyzer.getSentiment(tweet.split('.'));
-        let category = 'neutral';
+	let analysedTweets = data.map(tweet => {
+		let score = analyzer.getSentiment(tweet.split("."));
+		let category = "neutral";
 
-        if (score > 0) {
-            category = 'positive';
-        }
+		if (score > 0) {
+			category = "positive";
+		}
 
-        if (score < 0) {
-            category = 'negative';
-        }
+		if (score < 0) {
+			category = "negative";
+		}
 
-        return {
-            tweet_text: tweet.split('.').join(' '),
-            score: score,
-            category: category
-            }
-    });
+		return {
+			tweet_text: tweet.split(".").join(" "),
+			score: score,
+			category: category
+		};
+	});
 
-    return analysedTweets;
-}
+	return analysedTweets;
+};
 
 let featureExtraction = (tweets, amount = 100) => {
-    let TfIdf = natural.TfIdf;
-    let tfidf = new TfIdf();
-    
-    let words = tokenize(tweets);
+	let TfIdf = natural.TfIdf;
+	let tfidf = new TfIdf();
 
-    document = words.map(tweet => tweet.join(' ')).join(' ');
+	let words = tokenize(tweets);
 
-    document = tfidf.addDocument(document);
+	document = words.map(tweet => tweet.join(" ")).join(" ");
 
-    let features = [];
+	document = tfidf.addDocument(document);
 
-    for (let i = 0; i < amount; i++) {
-        let feature_list = tfidf.listTerms(0);
-        
-        features.push(hashtag = {
-            word: feature_list[i].term,
-            importance: feature_list[i].tfidf
-        });
-    }
+	let features = [];
 
-    return features;
-}
+	for (let i = 0; i < amount; i++) {
+		let feature_list = tfidf.listTerms(0);
 
-module.exports = analyseTweets = (tweets) => {
-    let top_features = featureExtraction(tweets);
-    let sentimentAnalysis = tweetsSentiment(tweets);
-    let hashtagCount = hashtagsCount(tweets);
-    
-    return {
-        amount_of_tweets: sentimentAnalysis.length,
-        most_important_words: top_features,
-        sentimentAnalysis_per_tweet: sentimentAnalysis,
-        hashtagCount: hashtagCount
-    };
-}
+		features.push(
+			(hashtag = {
+				word: feature_list[i].term,
+				importance: feature_list[i].tfidf
+			})
+		);
+	}
+
+	return features;
+};
+
+module.exports = analyseTweets = tweets => {
+	let top_features = featureExtraction(tweets);
+	let sentimentAnalysis = tweetsSentiment(tweets);
+	let hashtagCount = hashtagsCount(tweets);
+
+	return {
+		amount_of_tweets: sentimentAnalysis.length,
+		most_important_words: top_features,
+		sentimentAnalysis_per_tweet: sentimentAnalysis,
+		hashtagCount: hashtagCount
+	};
+};
