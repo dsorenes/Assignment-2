@@ -2,7 +2,6 @@
 const search = document.querySelector('#search');
 const input = document.querySelector('#hashtags');
 const filter = document.querySelector('#hashtag-filter');
-let finished = false;
 
 import getTweets from '/tweets.mjs';
 input.focus();
@@ -29,7 +28,7 @@ search.addEventListener('click', async () => {
     if (search.classList.contains('btn-primary')) {
         search.className = "main-input btn btn-danger";
         search.innerHTML = "Searching..";
-        await getTweets(tags, 900);
+        await getTweets(tags, 500);
     } else {
         search.className = "main-input btn btn-primary";
         search.innerHTML = "Search";

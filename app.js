@@ -97,7 +97,7 @@ let getTweets = async (query, amount_of_tweets = 500, data = null, callback) => 
             console.log(error);
           }
 
-          if (data === []) {
+          if (data === [] || data === undefined) {
               getTweets(query, amount_of_tweets, null, callback);
           }
   

@@ -1,5 +1,5 @@
 let parseTweets = (data) => {
-    if (data === undefined || data.statuses === undefined) {
+    if (data === undefined || data.statuses === undefined || data === []) {
         return { error: "no tweets available" };
     }
 
