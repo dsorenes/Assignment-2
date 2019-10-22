@@ -55,8 +55,7 @@ app.get("/get/tweets", async (req, res) => {
 		if (error) console.log(error);
 
 		if (result) {
-			const tweetAnalysis = JSON.parse(result);
-			let tweetAnalysisFromCache = tweetAnalysis;
+			const tweetAnalysisFromCache = JSON.parse(result);
 
 			//If amount from cache is less than user specified, fetch remaining data from Twitter and store that in cache too
 			if (amount_of_tweets > tweetAnalysisFromCache.amount_of_tweets) {
@@ -88,7 +87,7 @@ app.get("/get/tweets", async (req, res) => {
 					});
 				});
 			} else {
-				return res.status(200).send({ source: "Redis cache", tweetAnalysis });
+				return res.status(200).send({ source: "Redis cache", tweetAnalysisFromCache });
 			}
 		} else {
 			//check if it's in S3
@@ -101,13 +100,51 @@ app.get("/get/tweets", async (req, res) => {
 					if (result) {
 						let data = result.Body.toString("utf-8");
 
-						let tweetAnalysis = JSON.parse(data);
+						let tweetAnalysisFromS3 = JSON.parse(data);
 
-						redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysis));
+						if (amount_of_tweets > tweetAnalysisFromS3.amount_of_tweets) {
+							let amount = amount_of_tweets - tweetAnalysisFromS3.amount_of_tweets;
+							getTweets(query, amount, null, tweets => {
+								let tweetAnalysisFromAPI = analyseTweets(tweets);
+			
+								tweetAnalysisFromS3.amount_of_tweets +=
+									tweetAnalysisFromAPI.amount_of_tweets;
+								tweetAnalysisFromS3.most_important_words.push(
+									...tweetAnalysisFromAPI.most_important_words
+								);
+								tweetAnalysisFromS3.sentimentAnalysis_per_tweet.push(
+									...tweetAnalysisFromAPI.sentimentAnalysis_per_tweet
+								);
+								tweetAnalysisFromS3.hashtagCount.push(
+									...tweetAnalysisFromAPI.hashtagCount
+								);
+								redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysisFromS3));
 
-						return res
-							.status(200)
-							.send({ source: "S3 storage", tweetAnalysis });
+								new AWS.S3({ apiVersion: "2006-03-01" })
+								.putObject({
+									Bucket: bucketName,
+									Key: bucketKey,
+									Body: JSON.stringify(tweetAnalysisFromS3)
+								})
+								.promise()
+								.then(data =>
+									console.log(
+										"successfully uploaded data to ",
+										bucketName,
+										bucketKey
+									)
+								);
+
+								return res
+									.status(200)
+									.send({ source: "S3 storage and Twitter API", tweetAnalysisFromS3 });
+								});
+							} else {
+								redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysisFromS3));
+								return res
+									.status(200)
+									.send({ source: "S3 storage", tweetAnalysisFromS3 }); 
+							}
 					} else {
 						//It's not in S3. Pull from Twitter API and push the analysed data into both S3 and the Redis Cache
 						getTweets(query, amount_of_tweets, null, tweets => {
@@ -183,7 +220,7 @@ let getTweets = async (
 				let difference = Math.abs(amount_of_tweets - total);
 
 				if (total < amount_of_tweets) {
-					let count = difference > 100 ? 100 : difference;
+					let count = difference > 100 ? 100 : difference + 10;
 
 					let min_id = parsed_tweets.search_metadata.min_id;
 					let max_id = parsed_tweets.search_metadata.maximum_id;

@@ -6,8 +6,12 @@ let parseTweets = data => {
 		return { error: "no tweets available" };
 	}
 
+
 	let new_tweets = [];
 	let tweets = data.statuses;
+	if (tweets[0].id === undefined) {
+		return null;
+	}
 	let max_id = tweets[0].id;
 	let min_id = tweets[0].id;
 
