@@ -18,10 +18,15 @@ const app = express();
 
 app.use(express.static(__dirname + "/src/public")).use(cors());
 
-const consumer_key = process.env.CONSUMER_KEY;
-const consumer_secret = process.env.CONSUMER_SECRET;
-const access_token = process.env.ACCESS_TOKEN;
-const access_secret = process.env.ACCESS_SECRET;
+// const consumer_key = process.env.CONSUMER_KEY;
+// const consumer_secret = process.env.CONSUMER_SECRET;
+// const access_token = process.env.ACCESS_TOKEN;
+// const access_secret = process.env.ACCESS_SECRET;
+
+const consumer_key = "yAPez7HDSfrUdyUkBZaa2NBtO";
+const consumer_secret = "OVclzJsSGIZ215DhXGxHXKStUGRaQu8VDTXMtKXRMTFCgtdB35" ;
+const access_token = "2956196670-qkLppav3719d0KmORFNncRaF74WOoX9fYr7LPIM";
+const access_secret = "xVbjzcAqDT7kQFPWHEvDz7LIyDPG9myq00QbNoldSQwun"; 
 
 oa = new OAuth(
 	"https://api.twitter.com/oauth/request_token",
@@ -33,7 +38,8 @@ oa = new OAuth(
 	"HMAC-SHA1"
 );
 
-const bucketName = "cab432anshuldaniel-hashtag-analysis-storage";
+// const bucketName = "cab432anshuldaniel-hashtag-analysis-storage";
+const bucketName = "cab432test-hashtag-analysis-storage";
 
 new AWS.S3({ apiVersion: "2006-03-01" })
 	.createBucket({ Bucket: bucketName })
@@ -220,7 +226,7 @@ let getTweets = async (
 				let difference = Math.abs(amount_of_tweets - total);
 
 				if (total < amount_of_tweets) {
-					let count = difference > 100 ? 100 : difference + 10;
+					let count = difference > 100 ? 100 : difference + 100;
 
 					let min_id = parsed_tweets.search_metadata.min_id;
 					let max_id = parsed_tweets.search_metadata.maximum_id;

@@ -38,8 +38,9 @@ let hashtagsCount = tweets => {
 	let hashtagsCount = [];
 	for (let [key, value] of countedSorted) {
 		hashtagsCount.push({
-			hashtag: key,
-			count: value
+			// changed the name from hashtag to text and count to value
+			text: key,
+			value: value
 		});
 	}
 
@@ -131,8 +132,8 @@ let featureExtraction = (tweets, amount = 100) => {
 
 		features.push(
 			(hashtag = {
-				word: feature_list[i].term,
-				importance: feature_list[i].tfidf
+				text: feature_list[i].term,
+				value: feature_list[i].tfidf
 			})
 		);
 	}
