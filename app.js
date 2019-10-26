@@ -9,8 +9,8 @@ const redisClient = redis.createClient();
 
 redisClient.on_connect("error", error => console.log(error));
 
-const analyseTweets = require("./analyseTweets.js");
-const utils = require("./utils.js");
+const analyseTweets = require("./utils/analyseTweets.js");
+const utils = require("./utils/utils.js");
 
 dotenv.config();
 
