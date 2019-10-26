@@ -16,7 +16,7 @@ dotenv.config();
 
 const app = express();
 
-app.use(express.static(__dirname + "/src/public")).use(cors());
+app.use(cors());
 
 const consumer_key = process.env.CONSUMER_KEY;
 const consumer_secret = process.env.CONSUMER_SECRET;
@@ -95,9 +95,8 @@ app.get("/get/tweets", async (req, res) => {
 			//need to do the same here as with the cache. If the total amount is larger than what already is in S3, fetch from API as well and update S3 content with new amount
 			const params = { Bucket: bucketName, Key: bucketKey };
 
-			return new AWS.S3({ apiVersion: "2006-03-1" }).getObject(
-				params,
-				(error, result) => {
+			return new AWS.S3({ apiVersion: "2006-03-1" })
+				.getObject(params, (error, result) => {
 					if (result) {
 						let data = result.Body.toString("utf-8");
 
@@ -136,15 +135,11 @@ app.get("/get/tweets", async (req, res) => {
 									)
 								);
 
-								return res
-									.status(200)
-									.send({ source: "S3 storage and Twitter API", tweetAnalysisFromS3 });
+								return res.status(200).send({ source: "S3 storage and Twitter API", tweetAnalysisFromS3 });
 								});
 							} else {
 								redisClient.setex(redisKey, 3600, JSON.stringify(tweetAnalysisFromS3));
-								return res
-									.status(200)
-									.send({ source: "S3 storage", tweetAnalysisFromS3 }); 
+								return res.status(200).send({ source: "S3 storage", tweetAnalysisFromS3 }); 
 							}
 					} else {
 						//It's not in S3. Pull from Twitter API and push the analysed data into both S3 and the Redis Cache
@@ -168,9 +163,7 @@ app.get("/get/tweets", async (req, res) => {
 									)
 								);
 
-							return res
-								.status(200)
-								.send({ source: "Twitter API", tweetAnalysis });
+							return res.status(200).send({ source: "Twitter API", tweetAnalysis });
 						});
 					}
 				}
