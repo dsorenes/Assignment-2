@@ -18,15 +18,11 @@ const app = express();
 
 app.use(express.static(__dirname + "/src/public")).use(cors());
 
-// const consumer_key = process.env.CONSUMER_KEY;
-// const consumer_secret = process.env.CONSUMER_SECRET;
-// const access_token = process.env.ACCESS_TOKEN;
-// const access_secret = process.env.ACCESS_SECRET;
+const consumer_key = process.env.CONSUMER_KEY;
+const consumer_secret = process.env.CONSUMER_SECRET;
+const access_token = process.env.ACCESS_TOKEN;
+const access_secret = process.env.ACCESS_SECRET;
 
-const consumer_key = "yAPez7HDSfrUdyUkBZaa2NBtO";
-const consumer_secret = "OVclzJsSGIZ215DhXGxHXKStUGRaQu8VDTXMtKXRMTFCgtdB35" ;
-const access_token = "2956196670-qkLppav3719d0KmORFNncRaF74WOoX9fYr7LPIM";
-const access_secret = "xVbjzcAqDT7kQFPWHEvDz7LIyDPG9myq00QbNoldSQwun"; 
 
 oa = new OAuth(
 	"https://api.twitter.com/oauth/request_token",
