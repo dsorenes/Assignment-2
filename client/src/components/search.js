@@ -55,14 +55,15 @@ class SearchTweets extends React.Component {
   fetchOnSubmit = () => {
     console.log(this.state);
     
-    var query = this.state.query.split(' ').join('');
-    var count = this.state.count;
-    var fetchString = "?q=%23" + query + "&amount=" + count;
+    let query = this.state.query.split(' ').join('');
+    let count = this.state.count;
+    let fetchString = "?q=%23" + query + "&amount=" + count;
+    console.log(fetchString);
 
     const request = async () => {
       this.setState({ isLoading: true });
       const response = await fetch(
-        "http://localhost:8080/get/tweets" + fetchString,
+        "/get/tweets" + fetchString,
         {
           method: "GET",
           headers: {
@@ -109,10 +110,6 @@ class SearchTweets extends React.Component {
       }
     }
     
-    // for(let i = 0; i < mostImportantTweetsArray.length; i++) {
-    //   tempStorage = mostImportantTweetsArray[i].importance;
-    //   mostImportantWord = Math.max(mostImportantWord, tempStorage);
-    // }
     this.setState({
       negativeCount: negativeCount,
       positiveCount: positiveCount,
