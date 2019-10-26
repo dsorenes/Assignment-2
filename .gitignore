@@ -6,3 +6,4 @@ app copy.js
 .png
 inspiration
 *.pem
+node_modules

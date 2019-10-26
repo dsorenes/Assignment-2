@@ -34,8 +34,7 @@ oa = new OAuth(
 	"HMAC-SHA1"
 );
 
-// const bucketName = "cab432anshuldaniel-hashtag-analysis-storage";
-const bucketName = "cab432test-hashtag-analysis-storage";
+const bucketName = "casd-test-storage";
 
 new AWS.S3({ apiVersion: "2006-03-01" })
 	.createBucket({ Bucket: bucketName })

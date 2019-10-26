@@ -55,15 +55,15 @@ class SearchTweets extends React.Component {
   fetchOnSubmit = () => {
     console.log(this.state);
     
-    let query = this.state.query.split(' ').join('');
+    let query = this.state.query.split(' ').join('+OR+#');
     let count = this.state.count;
-    let fetchString = "?q=%23" + query + "&amount=" + count;
+    let fetchString = "?q=%23" + encodeURIComponent(query) + "&amount=" + count;
     console.log(fetchString);
 
     const request = async () => {
       this.setState({ isLoading: true });
       const response = await fetch(
-        "/get/tweets" + fetchString,
+        "http://localhost:8080/get/tweets" + fetchString,
         {
           method: "GET",
           headers: {
