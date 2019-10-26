@@ -3,7 +3,9 @@ package-lock.json
 .gitignore
 .DS_Store
 app copy.js
-.png
+*.png
 inspiration
 *.pem
 node_modules
+/src
+
