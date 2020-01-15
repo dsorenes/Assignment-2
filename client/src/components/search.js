@@ -59,6 +59,7 @@ class SearchTweets extends React.Component {
     let count = this.state.count;
     let fetchString = "?q=%23" + encodeURIComponent(query) + "&amount=" + count;
     console.log(fetchString);
+    console.log(process.env.REACT_APP_test);
 
     const request = async () => {
       this.setState({ isLoading: true });
